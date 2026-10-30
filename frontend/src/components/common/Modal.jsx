@@ -1,0 +1,3 @@
+export default function Modal({ title, children, onClose, onConfirm, confirmLabel = 'Confirm' }) {
+  return <div className="modal-backdrop" role="presentation" onClick={onClose}><div className="modal card" role="dialog" onClick={(event) => event.stopPropagation()}><h2>{title}</h2><div>{children}</div><div className="modal-actions"><button className="button secondary" onClick={onClose}>Cancel</button><button className="button danger" onClick={onConfirm}>{confirmLabel}</button></div></div></div>;
+}
