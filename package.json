@@ -1,0 +1,25 @@
+{
+  "name": "deallens",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "backend",
+    "ai-service",
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "concurrently -n backend,ai,frontend -c blue,magenta,green \"npm run dev -w @deallens/backend\" \"npm run dev -w @deallens/ai-service\" \"npm run dev -w @deallens/frontend\"",
+    "dev:backend": "npm run dev -w @deallens/backend",
+    "dev:ai": "npm run dev -w @deallens/ai-service",
+    "dev:frontend": "npm run dev -w @deallens/frontend",
+    "test": "npm run test -w @deallens/backend && npm run test -w @deallens/ai-service",
+    "build": "npm run build -w @deallens/frontend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  },
+  "engines": {
+    "node": ">=20.19.0"
+  }
+}
