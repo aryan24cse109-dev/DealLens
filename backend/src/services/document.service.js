@@ -29,13 +29,13 @@ async function removeFile(filePath) {
 }
 
 export const documentService = {
-  async uploadDocument({ dealId, file, type }) {
+  async uploadDocument({ dealId, ownerId, file, type }) {
     if (!file) {
       throw new DocumentServiceError('Please upload a PDF file.', 400);
     }
 
     const deal = await prisma.deal.findUnique({
-      where: { id: dealId },
+      where: { id: dealId, ownerId },
       select: { id: true },
     });
 
@@ -78,9 +78,9 @@ export const documentService = {
     }
   },
 
-  async listDocuments(dealId) {
+  async listDocuments(dealId, ownerId) {
     const deal = await prisma.deal.findUnique({
-      where: { id: dealId },
+      where: { id: dealId, ownerId },
       select: { id: true },
     });
 
@@ -91,8 +91,8 @@ export const documentService = {
     return documentRepository.findByDealId(dealId);
   },
 
-  async getDocument(id) {
-    const document = await documentRepository.findById(id);
+  async getDocument(id, ownerId) {
+    const document = await documentRepository.findById(id, ownerId);
 
     if (!document) {
       throw new DocumentServiceError('Document not found.', 404);
@@ -101,14 +101,17 @@ export const documentService = {
     return document;
   },
 
-  async deleteDocument(id) {
-    const document = await documentRepository.findById(id);
+  async deleteDocument(id, ownerId) {
+    const document = await documentRepository.findById(id, ownerId);
 
     if (!document) {
       throw new DocumentServiceError('Document not found.', 404);
     }
 
-    await documentRepository.deleteById(id);
+    const deletion = await documentRepository.deleteById(id, ownerId);
+    if (!deletion.count) {
+      throw new DocumentServiceError('Document not found.', 404);
+    }
 
     const absolutePath = path.resolve(process.cwd(), document.storagePath);
     const uploadRoot = path.resolve(process.cwd(), env.uploadDir);

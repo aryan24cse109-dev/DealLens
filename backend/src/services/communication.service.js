@@ -9,9 +9,9 @@ export class CommunicationServiceError extends Error {
   }
 }
 
-async function loadAnalysis(analysisId) {
-  const analysis = await prisma.analysis.findUnique({
-    where: { id: analysisId },
+async function loadAnalysis(analysisId, ownerId) {
+  const analysis = await prisma.analysis.findFirst({
+    where: { id: analysisId, deal: { ownerId } },
     include: {
       deal: { select: { id: true, name: true } },
       changes: { orderBy: { createdAt: 'asc' } },
@@ -47,8 +47,8 @@ async function loadAnalysis(analysisId) {
 }
 
 export const communicationService = {
-  async createDraft(analysisId, input) {
-    const analysis = await loadAnalysis(analysisId);
+  async createDraft(ownerId, analysisId, input) {
+    const analysis = await loadAnalysis(analysisId, ownerId);
     const assessmentsByChangeId = new Map(
       analysis.aiAssessments.map((assessment) => [
         assessment.changeId,
@@ -109,34 +109,48 @@ export const communicationService = {
     });
   },
 
-  async listDrafts(analysisId) {
-    const analysis = await prisma.analysis.findUnique({
-      where: { id: analysisId },
+  async listDrafts(ownerId, analysisId) {
+    const analysis = await prisma.analysis.findFirst({
+      where: { id: analysisId, deal: { ownerId } },
       select: { id: true },
     });
     if (!analysis) throw new CommunicationServiceError('Analysis not found.', 404);
     return prisma.communicationDraft.findMany({
-      where: { analysisId },
+      where: { analysisId, analysis: { deal: { ownerId } } },
       orderBy: { createdAt: 'desc' },
     });
   },
 
-  async getDraft(id) {
-    const draft = await prisma.communicationDraft.findUnique({ where: { id } });
+  async getDraft(ownerId, id) {
+    const draft = await prisma.communicationDraft.findFirst({
+      where: { id, analysis: { deal: { ownerId } } },
+    });
     if (!draft) {
       throw new CommunicationServiceError('Communication draft not found.', 404);
     }
     return draft;
   },
 
-  async updateDraft(id, input) {
-    await this.getDraft(id);
-    return prisma.communicationDraft.update({ where: { id }, data: input });
+  async updateDraft(ownerId, id, input) {
+    await this.getDraft(ownerId, id);
+    const result = await prisma.communicationDraft.updateMany({
+      where: { id, analysis: { deal: { ownerId } } },
+      data: input,
+    });
+    if (!result.count) {
+      throw new CommunicationServiceError('Communication draft not found.', 404);
+    }
+    return this.getDraft(ownerId, id);
   },
 
-  async deleteDraft(id) {
-    await this.getDraft(id);
-    await prisma.communicationDraft.delete({ where: { id } });
+  async deleteDraft(ownerId, id) {
+    await this.getDraft(ownerId, id);
+    const result = await prisma.communicationDraft.deleteMany({
+      where: { id, analysis: { deal: { ownerId } } },
+    });
+    if (!result.count) {
+      throw new CommunicationServiceError('Communication draft not found.', 404);
+    }
     return { id, deleted: true };
   },
 };

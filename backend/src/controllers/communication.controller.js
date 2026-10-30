@@ -8,6 +8,7 @@ export const communicationController = {
   async create(req, res, next) {
     try {
       const draft = await communicationService.createDraft(
+        req.user.id,
         req.params.analysisId,
         createCommunicationSchema.parse(req.body),
       );
@@ -23,7 +24,7 @@ export const communicationController = {
 
   async list(req, res, next) {
     try {
-      const drafts = await communicationService.listDrafts(req.params.analysisId);
+      const drafts = await communicationService.listDrafts(req.user.id, req.params.analysisId);
       return res.status(200).json({ success: true, data: drafts });
     } catch (error) {
       return next(error);
@@ -32,7 +33,7 @@ export const communicationController = {
 
   async get(req, res, next) {
     try {
-      const draft = await communicationService.getDraft(req.params.draftId);
+      const draft = await communicationService.getDraft(req.user.id, req.params.draftId);
       return res.status(200).json({ success: true, data: draft });
     } catch (error) {
       return next(error);
@@ -42,6 +43,7 @@ export const communicationController = {
   async update(req, res, next) {
     try {
       const draft = await communicationService.updateDraft(
+        req.user.id,
         req.params.draftId,
         updateCommunicationSchema.parse(req.body),
       );
@@ -53,7 +55,7 @@ export const communicationController = {
 
   async remove(req, res, next) {
     try {
-      const result = await communicationService.deleteDraft(req.params.draftId);
+      const result = await communicationService.deleteDraft(req.user.id, req.params.draftId);
       return res.status(200).json({ success: true, data: result });
     } catch (error) {
       return next(error);

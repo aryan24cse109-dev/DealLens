@@ -11,7 +11,7 @@ export const analysisController = {
     try {
       const { analysisId } = req.params;
 
-      const result = await analysisService.runAiImpact(analysisId);
+      const result = await analysisService.runAiImpact(analysisId, req.user.id);
 
       return res.status(200).json({
         success: true,

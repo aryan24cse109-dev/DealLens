@@ -5,38 +5,41 @@ export const dealRepository = {
     return prisma.deal.create({ data });
   },
 
-  findMany({ skip, take, search }) {
+  findMany({ skip, take, search, ownerId }) {
+    const ownership = { ownerId };
     return prisma.deal.findMany({
       where: search
         ? {
+            ...ownership,
             OR: [
               { name: { contains: search, mode: 'insensitive' } },
               { description: { contains: search, mode: 'insensitive' } },
             ],
           }
-        : undefined,
+        : ownership,
       skip,
       take,
       orderBy: { createdAt: 'desc' },
     });
   },
 
-  count(search) {
+  count(search, ownerId) {
     return prisma.deal.count({
       where: search
         ? {
+            ownerId,
             OR: [
               { name: { contains: search, mode: 'insensitive' } },
               { description: { contains: search, mode: 'insensitive' } },
             ],
           }
-        : undefined,
+        : { ownerId },
     });
   },
 
-  findById(id) {
-    return prisma.deal.findUnique({
-      where: { id },
+  findById(id, ownerId) {
+    return prisma.deal.findFirst({
+      where: { id, ownerId },
       include: {
         documents: {
           orderBy: { createdAt: 'desc' },
@@ -55,16 +58,14 @@ export const dealRepository = {
     });
   },
 
-  update(id, data) {
-    return prisma.deal.update({
-      where: { id },
+  update(id, ownerId, data) {
+    return prisma.deal.updateMany({
+      where: { id, ownerId },
       data,
     });
   },
 
-  delete(id) {
-    return prisma.deal.delete({
-      where: { id },
-    });
+  delete(id, ownerId) {
+    return prisma.deal.deleteMany({ where: { id, ownerId } });
   },
 };

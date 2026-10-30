@@ -5,7 +5,10 @@ export const dashboardController = {
   async getSummary(req, res, next) {
     try {
       const query = dashboardQuerySchema.parse(req.query);
-      const data = await dashboardService.getSummary(query);
+      const data = await dashboardService.getSummary({
+        ...query,
+        ownerId: req.user.id,
+      });
 
       return res.status(200).json({
         success: true,

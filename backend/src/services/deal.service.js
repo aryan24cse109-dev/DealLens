@@ -9,14 +9,15 @@ export class AppError extends Error {
 }
 
 export const dealService = {
-  async createDeal(input) {
+  async createDeal(ownerId, input) {
     return dealRepository.create({
+      ownerId,
       name: input.name,
       description: input.description ?? null,
     });
   },
 
-  async listDeals({ page = 1, limit = 10, search = '' }) {
+  async listDeals({ page = 1, limit = 10, search = '', ownerId }) {
     const safePage = Math.max(1, Number(page) || 1);
     const safeLimit = Math.min(100, Math.max(1, Number(limit) || 10));
     const normalizedSearch = String(search).trim();
@@ -26,8 +27,9 @@ export const dealService = {
         skip: (safePage - 1) * safeLimit,
         take: safeLimit,
         search: normalizedSearch,
+        ownerId,
       }),
-      dealRepository.count(normalizedSearch),
+      dealRepository.count(normalizedSearch, ownerId),
     ]);
 
     return {
@@ -41,8 +43,8 @@ export const dealService = {
     };
   },
 
-  async getDeal(id) {
-    const deal = await dealRepository.findById(id);
+  async getDeal(ownerId, id) {
+    const deal = await dealRepository.findById(id, ownerId);
 
     if (!deal) {
       throw new AppError('Deal not found.', 404);
@@ -51,14 +53,15 @@ export const dealService = {
     return deal;
   },
 
-  async updateDeal(id, input) {
-    await this.getDeal(id);
-    return dealRepository.update(id, input);
+  async updateDeal(ownerId, id, input) {
+    const result = await dealRepository.update(id, ownerId, input);
+    if (!result.count) throw new AppError('Deal not found.', 404);
+    return this.getDeal(ownerId, id);
   },
 
-  async deleteDeal(id) {
-    await this.getDeal(id);
-    await dealRepository.delete(id);
+  async deleteDeal(ownerId, id) {
+    const result = await dealRepository.delete(id, ownerId);
+    if (!result.count) throw new AppError('Deal not found.', 404);
 
     return { id, deleted: true };
   },

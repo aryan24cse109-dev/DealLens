@@ -74,8 +74,20 @@ function buildActivity({ deals, documents, analyses, reports, drafts }) {
 }
 
 export const dashboardService = {
-  async getSummary({ from, to, limit }) {
-    const where = getDateWhere({ from, to });
+  async getSummary({ from, to, limit, ownerId }) {
+    const dateWhere = getDateWhere({ from, to });
+    const dealWhere = { ...dateWhere, ownerId };
+    const analysisWhere = { ...dateWhere, deal: { ownerId } };
+    const documentWhere = { ...dateWhere, deal: { ownerId } };
+    const changeWhere = { ...dateWhere, analysis: { deal: { ownerId } } };
+    const reportWhere = {
+      ...dateWhere,
+      analysis: { deal: { ownerId } },
+    };
+    const draftWhere = {
+      ...dateWhere,
+      analysis: { deal: { ownerId } },
+    };
     const recentTake = Math.min(limit, 50);
 
     const [
@@ -99,36 +111,36 @@ export const dashboardService = {
       recentActivityReports,
       recentActivityDrafts,
     ] = await Promise.all([
-      prisma.deal.count({ where }),
-      prisma.document.count({ where }),
-      prisma.analysis.count({ where }),
-      prisma.change.count({ where }),
-      prisma.analysis.count({ where: { ...where, status: 'COMPLETED' } }),
-      prisma.analysis.count({ where: { ...where, status: 'FAILED' } }),
-      prisma.analysis.count({ where: { ...where, status: 'PENDING' } }),
+      prisma.deal.count({ where: dealWhere }),
+      prisma.document.count({ where: documentWhere }),
+      prisma.analysis.count({ where: analysisWhere }),
+      prisma.change.count({ where: changeWhere }),
+      prisma.analysis.count({ where: { ...analysisWhere, status: 'COMPLETED' } }),
+      prisma.analysis.count({ where: { ...analysisWhere, status: 'FAILED' } }),
+      prisma.analysis.count({ where: { ...analysisWhere, status: 'PENDING' } }),
       prisma.change.groupBy({
         by: ['severity'],
-        where,
+        where: changeWhere,
         _count: { _all: true },
       }),
       prisma.deal.groupBy({
         by: ['status'],
-        where,
+        where: dealWhere,
         _count: { _all: true },
       }),
       prisma.analysis.groupBy({
         by: ['status'],
-        where,
+        where: analysisWhere,
         _count: { _all: true },
       }),
       prisma.change.count({
-        where: { ...where, severity: 'HIGH' },
+        where: { ...changeWhere, severity: 'HIGH' },
       }),
       prisma.change.count({
-        where: { ...where, severity: 'CRITICAL' },
+        where: { ...changeWhere, severity: 'CRITICAL' },
       }),
       prisma.deal.findMany({
-        where,
+        where: dealWhere,
         orderBy: { createdAt: 'desc' },
         take: recentTake,
         select: {
@@ -147,7 +159,7 @@ export const dashboardService = {
         },
       }),
       prisma.analysis.findMany({
-        where,
+        where: analysisWhere,
         orderBy: { createdAt: 'desc' },
         take: recentTake,
         select: {
@@ -172,13 +184,13 @@ export const dashboardService = {
         },
       }),
       prisma.deal.findMany({
-        where,
+        where: dealWhere,
         orderBy: { createdAt: 'desc' },
         take: recentTake,
         select: { id: true, name: true, createdAt: true },
       }),
       prisma.document.findMany({
-        where,
+        where: documentWhere,
         orderBy: { createdAt: 'desc' },
         take: recentTake,
         select: {
@@ -190,7 +202,7 @@ export const dashboardService = {
         },
       }),
       prisma.analysis.findMany({
-        where,
+        where: analysisWhere,
         orderBy: { createdAt: 'desc' },
         take: recentTake,
         select: {
@@ -201,7 +213,7 @@ export const dashboardService = {
         },
       }),
       prisma.report.findMany({
-        where: { createdAt: where?.createdAt },
+        where: reportWhere,
         orderBy: { createdAt: 'desc' },
         take: recentTake,
         select: {
@@ -217,7 +229,7 @@ export const dashboardService = {
         },
       }),
       prisma.communicationDraft.findMany({
-        where: { createdAt: where?.createdAt },
+        where: draftWhere,
         orderBy: { createdAt: 'desc' },
         take: recentTake,
         select: {

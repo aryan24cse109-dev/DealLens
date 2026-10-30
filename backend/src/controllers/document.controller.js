@@ -28,6 +28,7 @@ export const documentController = {
 
       const document = await documentService.uploadDocument({
         dealId,
+        ownerId: req.user.id,
         file: req.file,
         type: body.type,
       });
@@ -45,7 +46,7 @@ export const documentController = {
   async listByDeal(req, res, next) {
     try {
       const dealId = parseId(req.params.dealId, 'deal ID');
-      const documents = await documentService.listDocuments(dealId);
+      const documents = await documentService.listDocuments(dealId, req.user.id);
 
       res.status(200).json({
         success: true,
@@ -59,7 +60,7 @@ export const documentController = {
   async getById(req, res, next) {
     try {
       const id = parseId(req.params.id, 'document ID');
-      const document = await documentService.getDocument(id);
+      const document = await documentService.getDocument(id, req.user.id);
 
       res.status(200).json({
         success: true,
@@ -73,7 +74,7 @@ export const documentController = {
   async remove(req, res, next) {
     try {
       const id = parseId(req.params.id, 'document ID');
-      const result = await documentService.deleteDocument(id);
+      const result = await documentService.deleteDocument(id, req.user.id);
 
       res.status(200).json({
         success: true,

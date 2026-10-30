@@ -2,8 +2,11 @@
 import { Router } from 'express';
 import { uploadDocument } from '../middleware/upload.middleware.js';
 import { documentController } from '../controllers/document.controller.js';
+import { requireAuth } from '../middleware/auth.middleware.js';
+import { requireSameOrigin } from '../middleware/csrf.middleware.js';
 
 const router = Router();
+router.use(requireAuth, requireSameOrigin);
 
 router.post(
   '/deals/:dealId/documents',

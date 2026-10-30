@@ -34,9 +34,9 @@ export const comparisonService = {
   async compareDocuments({
     originalDocumentId,
     revisedDocumentId,
-  }) {
+  }, ownerId) {
     const originalDocument =
-      await documentRepository.findById(originalDocumentId);
+      await documentRepository.findById(originalDocumentId, ownerId);
 
     if (!originalDocument) {
       throw new ComparisonServiceError(
@@ -46,7 +46,7 @@ export const comparisonService = {
     }
 
     const revisedDocument =
-      await documentRepository.findById(revisedDocumentId);
+      await documentRepository.findById(revisedDocumentId, ownerId);
 
     if (!revisedDocument) {
       throw new ComparisonServiceError(

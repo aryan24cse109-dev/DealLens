@@ -14,9 +14,9 @@ export class AnalysisServiceError extends Error {
 }
 
 export const analysisService = {
-  async runAiImpact(analysisId) {
-    const analysis = await prisma.analysis.findUnique({
-      where: { id: analysisId },
+  async runAiImpact(analysisId, ownerId) {
+    const analysis = await prisma.analysis.findFirst({
+      where: { id: analysisId, deal: { ownerId } },
       include: {
         changes: {
           orderBy: { createdAt: 'asc' },

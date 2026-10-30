@@ -10,7 +10,7 @@ export const comparisonController = {
     try {
       const input = compareDocumentsSchema.parse(req.body);
 
-      const result = await comparisonService.compareDocuments(input);
+      const result = await comparisonService.compareDocuments(input, req.user.id);
 
       return res.status(201).json({
         success: true,

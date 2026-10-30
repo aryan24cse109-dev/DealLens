@@ -125,9 +125,9 @@ function serializeReport(report) {
   };
 }
 
-async function loadReport(reportId) {
-  const report = await prisma.report.findUnique({
-    where: { id: reportId },
+async function loadReport(reportId, ownerId) {
+  const report = await prisma.report.findFirst({
+    where: { id: reportId, analysis: { deal: { ownerId } } },
     include: {
       analysis: {
         include: {
@@ -225,9 +225,9 @@ async function removeFile(filePath) {
 }
 
 export const reportService = {
-  async createReport(analysisId, input) {
-    const analysis = await prisma.analysis.findUnique({
-      where: { id: analysisId },
+  async createReport(ownerId, analysisId, input) {
+    const analysis = await prisma.analysis.findFirst({
+      where: { id: analysisId, deal: { ownerId } },
       select: { id: true },
     });
     if (!analysis) throw new ReportServiceError('Analysis not found.', 404);
@@ -237,7 +237,7 @@ export const reportService = {
     });
 
     try {
-      const reportData = serializeReport(await loadReport(report.id));
+      const reportData = serializeReport(await loadReport(report.id, ownerId));
       const filePath = getReportFilePath(report.id, report.format);
       await mkdir(path.dirname(filePath), { recursive: true });
 
@@ -258,30 +258,32 @@ export const reportService = {
     }
   },
 
-  async listReports(analysisId) {
-    const analysis = await prisma.analysis.findUnique({
-      where: { id: analysisId },
+  async listReports(ownerId, analysisId) {
+    const analysis = await prisma.analysis.findFirst({
+      where: { id: analysisId, deal: { ownerId } },
       select: { id: true },
     });
     if (!analysis) throw new ReportServiceError('Analysis not found.', 404);
 
     const reports = await prisma.report.findMany({
-      where: { analysisId },
+      where: { analysisId, analysis: { deal: { ownerId } } },
       orderBy: { createdAt: 'desc' },
     });
     return reports.map(toPublicReport);
   },
 
-  async getReport(reportId) {
-    const report = await prisma.report.findUnique({
-      where: { id: reportId },
+  async getReport(ownerId, reportId) {
+    const report = await prisma.report.findFirst({
+      where: { id: reportId, analysis: { deal: { ownerId } } },
     });
     if (!report) throw new ReportServiceError('Report not found.', 404);
     return toPublicReport(report);
   },
 
-  async getDownload(reportId) {
-    const report = await prisma.report.findUnique({ where: { id: reportId } });
+  async getDownload(ownerId, reportId) {
+    const report = await prisma.report.findFirst({
+      where: { id: reportId, analysis: { deal: { ownerId } } },
+    });
     if (!report) throw new ReportServiceError('Report not found.', 404);
     if (!report.storagePath) {
       throw new ReportServiceError('Report file is not available.', 404);
@@ -309,15 +311,22 @@ export const reportService = {
     }
   },
 
-  async deleteReport(reportId) {
-    const report = await prisma.report.findUnique({ where: { id: reportId } });
+  async deleteReport(ownerId, reportId) {
+    const report = await prisma.report.findFirst({
+      where: { id: reportId, analysis: { deal: { ownerId } } },
+    });
     if (!report) throw new ReportServiceError('Report not found.', 404);
 
     if (report.storagePath) {
       const filePath = path.resolve(process.cwd(), report.storagePath);
       if (isInsideReportDirectory(filePath)) await removeFile(filePath);
     }
-    await prisma.report.delete({ where: { id: reportId } });
+    const deletion = await prisma.report.deleteMany({
+      where: { id: reportId, analysis: { deal: { ownerId } } },
+    });
+    if (!deletion.count) {
+      throw new ReportServiceError('Report not found.', 404);
+    }
     return { id: reportId, deleted: true };
   },
 };

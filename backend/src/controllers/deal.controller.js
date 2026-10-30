@@ -19,7 +19,7 @@ export const dealController = {
   async create(req, res, next) {
     try {
       const input = createDealSchema.parse(req.body);
-      const deal = await dealService.createDeal(input);
+      const deal = await dealService.createDeal(req.user.id, input);
 
       res.status(201).json({
         success: true,
@@ -36,6 +36,7 @@ export const dealController = {
         page: req.query.page,
         limit: req.query.limit,
         search: req.query.search,
+        ownerId: req.user.id,
       });
 
       res.status(200).json({
@@ -49,7 +50,7 @@ export const dealController = {
 
   async getById(req, res, next) {
     try {
-      const deal = await dealService.getDeal(parseId(req));
+      const deal = await dealService.getDeal(req.user.id, parseId(req));
 
       res.status(200).json({
         success: true,
@@ -64,7 +65,7 @@ export const dealController = {
     try {
       const id = parseId(req);
       const input = updateDealSchema.parse(req.body);
-      const deal = await dealService.updateDeal(id, input);
+      const deal = await dealService.updateDeal(req.user.id, id, input);
 
       res.status(200).json({
         success: true,
@@ -77,7 +78,7 @@ export const dealController = {
 
   async remove(req, res, next) {
     try {
-      const result = await dealService.deleteDeal(parseId(req));
+      const result = await dealService.deleteDeal(req.user.id, parseId(req));
 
       res.status(200).json({
         success: true,

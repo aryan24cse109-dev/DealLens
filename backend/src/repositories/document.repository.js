@@ -6,9 +6,9 @@ export const documentRepository = {
     return prisma.document.create({ data });
   },
 
-  findByDealId(dealId) {
+  findByDealId(dealId, ownerId) {
     return prisma.document.findMany({
-      where: { dealId },
+      where: { dealId, deal: { ownerId } },
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,
@@ -23,15 +23,15 @@ export const documentRepository = {
     });
   },
 
-  findById(id) {
-    return prisma.document.findUnique({
-      where: { id },
+  findById(id, ownerId) {
+    return prisma.document.findFirst({
+      where: { id, deal: { ownerId } },
     });
   },
 
-  deleteById(id) {
-    return prisma.document.delete({
-      where: { id },
+  deleteById(id, ownerId) {
+    return prisma.document.deleteMany({
+      where: { id, deal: { ownerId } },
     });
   },
 };

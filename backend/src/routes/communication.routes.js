@@ -1,7 +1,10 @@
 import { Router } from 'express';
 import { communicationController } from '../controllers/communication.controller.js';
+import { requireAuth } from '../middleware/auth.middleware.js';
+import { requireSameOrigin } from '../middleware/csrf.middleware.js';
 
 const router = Router();
+router.use(requireAuth, requireSameOrigin);
 
 router.post(
   '/analyses/:analysisId/communications',
