@@ -1,0 +1,197 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum DealStatus {
+  DRAFT
+  PROCESSING
+  ANALYZED
+  FAILED
+}
+
+enum DocumentType {
+  ORIGINAL
+  REVISED
+  SUPPORTING
+}
+
+enum ChangeSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model Deal {
+  id          String     @id @default(cuid())
+  ownerId     String?
+  name        String
+  description String?
+  status      DealStatus @default(DRAFT)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  owner     User?      @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  documents Document[]
+  analyses  Analysis[]
+
+  @@index([ownerId, createdAt])
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String?
+  avatarUrl     String?
+  emailVerified Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  accounts OAuthAccount[]
+  sessions Session[]
+  deals    Deal[]
+}
+
+model OAuthAccount {
+  id                String   @id @default(cuid())
+  userId            String
+  provider          String
+  providerAccountId String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id         String   @id @default(cuid())
+  userId     String
+  tokenHash  String   @unique
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  lastUsedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model OAuthTransaction {
+  id            String   @id @default(cuid())
+  stateHash     String   @unique
+  transactionHash String  @unique
+  codeVerifier  String
+  nonce         String
+  expiresAt     DateTime
+  createdAt     DateTime @default(now())
+
+  @@index([expiresAt])
+}
+
+model Document {
+  id            String       @id @default(cuid())
+  dealId        String
+  type          DocumentType
+  originalName  String
+  storagePath   String
+  mimeType      String
+  sizeBytes     Int
+  extractedText String?
+  createdAt     DateTime     @default(now())
+
+  deal Deal @relation(fields: [dealId], references: [id], onDelete: Cascade)
+
+  @@index([dealId])
+}
+
+model Analysis {
+  id        String   @id @default(cuid())
+  dealId    String
+  summary   String?
+  status    String   @default("PENDING")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  deal          Deal                 @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  changes       Change[]
+  aiAssessments AiAssessment[]
+  reports       Report[]
+  drafts        CommunicationDraft[]
+
+  @@index([dealId, createdAt])
+}
+
+model Change {
+  id          String         @id @default(cuid())
+  analysisId  String
+  category    String
+  field       String?
+  oldValue    String?
+  newValue    String?
+  explanation String?
+  severity    ChangeSeverity @default(MEDIUM)
+  createdAt   DateTime       @default(now())
+
+  analysis     Analysis      @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  aiAssessment AiAssessment?
+
+  @@index([analysisId])
+}
+
+model AiAssessment {
+  id              String         @id @default(cuid())
+  analysisId      String
+  changeId        String         @unique
+  category        String
+  impact          String
+  explanation     String
+  suggestedAction String
+  severity        ChangeSeverity
+  confidence      Float
+  model           String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  analysis Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  change   Change   @relation(fields: [changeId], references: [id], onDelete: Cascade)
+
+  @@index([analysisId])
+  @@index([analysisId, severity])
+}
+
+model Report {
+  id          String   @id @default(cuid())
+  analysisId  String
+  title       String
+  format      String   @default("PDF")
+  storagePath String?
+  createdAt   DateTime @default(now())
+
+  analysis Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+
+  @@index([analysisId])
+}
+
+model CommunicationDraft {
+  id                String   @id @default(cuid())
+  analysisId        String
+  communicationType String   @default("CLIENT_NOTIFICATION")
+  channel           String
+  subject           String?
+  content           String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  analysis Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+
+  @@index([analysisId])
+}
