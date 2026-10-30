@@ -33,4 +33,7 @@ Confidence must be a number between 0 and 1.
 Base your assessment on the supplied text. Do not invent contract terms,
 legal obligations, or facts. If the meaning is uncertain, say so and
 recommend review by an appropriate professional.
+
+Keep every impact, explanation, and suggestedAction concise (one or two
+sentences each) so that one assessment is returned for every supplied change.
 `;

@@ -17,12 +17,24 @@ app.get('/health', (_req, res) => {
 app.use('/api/v1/ai', aiRoutes);
 
 app.use((err, _req, res, _next) => {
-  console.error('[AI service error]', err.message);
+  console.error('[AI service error]', {
+    status: err.status || 502,
+    message: err.message,
+    providerType: err.providerType || null,
+    providerCode: err.providerCode || null,
+    providerMessage: err.providerMessage || null,
+    retryAfterMs: err.retryAfterMs || null,
+    model: err.providerModel || null,
+    endpoint: err.providerEndpoint || null,
+  });
 
   const status =
     Number.isInteger(err.status) && err.status >= 400 && err.status < 600
       ? err.status
       : 502;
+  if (err.retryAfterMs) {
+    res.setHeader('Retry-After', Math.ceil(err.retryAfterMs / 1000));
+  }
 
   res.status(status).json({
     error: status === 502

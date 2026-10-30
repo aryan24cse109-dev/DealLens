@@ -22,6 +22,10 @@ export const env = {
     process.env.AI_REQUEST_TIMEOUT_MS,
     45000
   ),
+  maxSynchronousRetryWaitMs: readPositiveInteger(
+    process.env.AI_MAX_SYNCHRONOUS_RETRY_WAIT_MS,
+    30000,
+  ),
   maxChangesPerRequest: readPositiveInteger(
     process.env.AI_MAX_CHANGES,
     50

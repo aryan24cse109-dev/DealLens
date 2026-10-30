@@ -48,6 +48,8 @@ export async function analyzeVerifiedChanges(input) {
   const generated = await generateChatCompletion({
     systemPrompt: IMPACT_ANALYSIS_SYSTEM_PROMPT,
     userPrompt,
+    maxOutputTokens: parsedInput.maxOutputTokens,
+    responseFormat: null,
   });
 
   const validated = parseAndValidateImpactOutput(

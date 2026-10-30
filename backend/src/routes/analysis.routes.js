@@ -6,6 +6,7 @@ import { requireSameOrigin } from '../middleware/csrf.middleware.js';
 const router = Router();
 router.use(requireAuth, requireSameOrigin);
 
+router.get('/:analysisId', analysisController.get);
 router.post('/:analysisId/ai-impact', analysisController.runAiImpact);
 
 export default router;

@@ -3,17 +3,41 @@ import {
   aiImpactResponseSchema,
 } from '../schemas/impact.schema.js';
 
+export function parseJsonObject(rawContent) {
+  if (typeof rawContent !== 'string') {
+    throw new Error('AI returned invalid JSON.');
+  }
+
+  const trimmed = rawContent.trim();
+  const withoutFence = trimmed
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/\s*```$/i, '')
+    .trim();
+
+  try {
+    return JSON.parse(withoutFence);
+  } catch {
+    const firstObject = withoutFence.indexOf('{');
+    const lastObject = withoutFence.lastIndexOf('}');
+    if (firstObject < 0 || lastObject <= firstObject) {
+      throw new Error('AI returned invalid JSON.');
+    }
+
+    try {
+      return JSON.parse(withoutFence.slice(firstObject, lastObject + 1));
+    } catch {
+      throw new Error(
+        'AI returned invalid or truncated JSON.',
+      );
+    }
+  }
+}
+
 export function parseAndValidateImpactOutput(
   rawContent,
   expectedChangeIds,
 ) {
-  let parsed;
-
-  try {
-    parsed = JSON.parse(rawContent);
-  } catch {
-    throw new Error('AI returned invalid JSON.');
-  }
+  const parsed = parseJsonObject(rawContent);
 
   const result = aiImpactResponseSchema.safeParse(parsed);
 

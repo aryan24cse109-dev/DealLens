@@ -25,6 +25,7 @@ export const verifiedChangeSchema = z.object({
 
 export const impactAnalysisRequestSchema = z.object({
   changes: z.array(verifiedChangeSchema).min(1).max(50),
+  maxOutputTokens: z.number().int().min(256).max(3500).optional(),
 }).strict();
 
 export const aiImpactItemSchema = z.object({

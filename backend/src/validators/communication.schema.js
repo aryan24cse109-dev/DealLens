@@ -15,10 +15,8 @@ export const communicationChannelSchema = z.enum([
 ]);
 
 export const createCommunicationSchema = z.object({
-  communicationType: communicationTypeSchema,
-  channel: communicationChannelSchema,
-  instructions: z.string().trim().max(2000).optional().default(''),
-});
+  additionalInstructions: z.string().trim().max(2000).optional().default(''),
+}).strict();
 
 export const updateCommunicationSchema = z
   .object({
@@ -34,4 +32,10 @@ export const communicationResponseSchema = z.object({
   content: z.string().trim().min(1).max(10000),
   communicationType: communicationTypeSchema,
   channel: communicationChannelSchema,
+  model: z.string().trim().min(1).max(200).optional(),
+  usage: z.object({
+    promptTokens: z.number().int().nonnegative().optional(),
+    completionTokens: z.number().int().nonnegative().optional(),
+    totalTokens: z.number().int().nonnegative().optional(),
+  }).strict().optional(),
 }).strict();

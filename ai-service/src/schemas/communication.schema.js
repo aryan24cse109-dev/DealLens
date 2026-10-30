@@ -40,10 +40,11 @@ export const communicationRequestSchema = z.object({
   analysis: z.object({
     dealName: z.string().trim().min(1).max(200),
     summary: z.record(z.string(), z.unknown()),
-    changes: z.array(changeSchema).min(1).max(100),
-    assessments: z.array(assessmentSchema).min(1).max(100),
+    changes: z.array(changeSchema).min(1).max(200),
+    assessments: z.array(assessmentSchema).min(1).max(200),
   }).strict(),
   instructions: z.string().trim().max(2000).optional().default(''),
+  maxOutputTokens: z.number().int().min(256).max(3500).optional(),
 }).strict();
 
 export const communicationResponseSchema = z.object({
@@ -51,4 +52,11 @@ export const communicationResponseSchema = z.object({
   content: z.string().trim().min(1).max(10000),
   communicationType: communicationTypeSchema,
   channel: communicationChannelSchema,
+}).strict();
+
+export const generatedCommunicationSchema = z.object({
+  subject: z.string().trim().min(1).max(300).nullable(),
+  content: z.string().trim().min(1).max(10000),
+  communicationType: communicationTypeSchema.optional(),
+  channel: communicationChannelSchema.optional(),
 }).strict();

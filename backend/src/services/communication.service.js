@@ -1,5 +1,8 @@
 import { prisma } from '../config/database.js';
 import { requestCommunicationGeneration } from './ai.service.js';
+import { env } from '../config/env.js';
+import { splitChangesByTokenBudget } from '../utils/batch.js';
+import { randomUUID } from 'node:crypto';
 
 export class CommunicationServiceError extends Error {
   constructor(message, status = 500) {
@@ -33,10 +36,18 @@ async function loadAnalysis(analysisId, ownerId) {
     );
   }
   const changeIds = new Set(analysis.changes.map((change) => change.id));
+  const assessmentIds = analysis.aiAssessments.map(
+    (assessment) => assessment.changeId,
+  );
+  const uniqueAssessmentIds = new Set(assessmentIds);
   if (
+    uniqueAssessmentIds.size !== assessmentIds.length
+    || uniqueAssessmentIds.size !== changeIds.size
+    ||
     analysis.aiAssessments.some(
       (assessment) => !changeIds.has(assessment.changeId),
     )
+    || analysis.changes.some((change) => !uniqueAssessmentIds.has(change.id))
   ) {
     throw new CommunicationServiceError(
       'Analysis AI assessments do not match its changes.',
@@ -46,8 +57,18 @@ async function loadAnalysis(analysisId, ownerId) {
   return analysis;
 }
 
+function compactText(value, limit = 16) {
+  if (value === null || value === undefined) return null;
+  if (value.length <= limit) return value;
+  return `${value.slice(0, limit - 15)}...[truncated]`;
+}
+
 export const communicationService = {
   async createDraft(ownerId, analysisId, input) {
+    const operationId = randomUUID();
+    console.info('[communication.started]', { operationId, analysisId });
+    const communicationType = 'CLIENT_NOTIFICATION';
+    const channel = 'EMAIL';
     const analysis = await loadAnalysis(analysisId, ownerId);
     const assessmentsByChangeId = new Map(
       analysis.aiAssessments.map((assessment) => [
@@ -67,46 +88,92 @@ export const communicationService = {
       }
     }
 
-    const result = await requestCommunicationGeneration({
-      communicationType: input.communicationType,
-      channel: input.channel,
-      instructions: input.instructions,
-      analysis: {
-        dealName: analysis.deal.name,
-        summary,
-        changes: analysis.changes.map((change) => ({
-          id: change.id,
-          type: change.category,
-          category: change.field ?? 'GENERAL',
-          oldValue: change.oldValue,
-          newValue: change.newValue,
-          explanation: change.explanation,
-          severity: change.severity,
-        })),
-        assessments: analysis.changes.map((change) => {
-          const assessment = assessmentsByChangeId.get(change.id);
-          return {
-            changeId: assessment.changeId,
-            category: assessment.category,
-            impact: assessment.impact,
-            explanation: assessment.explanation,
-            suggestedAction: assessment.suggestedAction,
-            severity: assessment.severity,
-            confidence: assessment.confidence,
-          };
-        }),
-      },
+    const changes = analysis.changes.map((change) => ({
+      id: change.id,
+      type: change.category,
+      category: change.field ?? 'GENERAL',
+      oldValue: null,
+      newValue: null,
+      explanation: 'See report.',
+      severity: change.severity,
+    }));
+    const batches = splitChangesByTokenBudget(changes, {
+      maxChanges: Math.min(env.aiSafeBatchSize ?? 5, 5),
+      maxPromptTokens: Math.min(env.aiMaxPromptTokens ?? 1200, 900),
     });
+    const generatedParts = [];
+    try {
+      for (const [index, batch] of batches.entries()) {
+      const batchIds = new Set(batch.map((change) => change.id));
+        const result = await requestCommunicationGeneration({
+        communicationType,
+        channel,
+        instructions: input.additionalInstructions,
+        analysis: {
+          dealName: analysis.deal.name,
+          summary,
+          changes: batch,
+          assessments: batch.map((change) => {
+            const assessment = assessmentsByChangeId.get(change.id);
+            return {
+              changeId: assessment.changeId,
+              category: assessment.category,
+              impact: compactText(assessment.impact),
+              explanation: 'See report.',
+              suggestedAction: compactText(assessment.suggestedAction),
+              severity: assessment.severity,
+              confidence: assessment.confidence,
+            };
+          }),
+        },
+        maxOutputTokens: Number.isInteger(env.aiCommunicationMaxOutputTokens)
+          ? Math.min(env.aiCommunicationMaxOutputTokens, 2200)
+          : 1500,
+      });
+        if (!result.content || !batch.every((change) => batchIds.has(change.id))) {
+          throw new CommunicationServiceError(
+            'AI service returned an incomplete communication section.',
+            502,
+          );
+        }
+        generatedParts.push(result);
+        console.info('[communication.batch.completed]', {
+          operationId,
+          analysisId,
+          batch: `${index + 1}/${batches.length}`,
+        });
+      }
+    } catch (error) {
+      console.error('[communication.failed]', {
+        operationId,
+        analysisId,
+        status: error.status || 502,
+      });
+      throw error;
+    }
 
-    return prisma.communicationDraft.create({
+    const result = {
+      ...generatedParts[0],
+      content: generatedParts.map((part) => part.content).join('\n\n'),
+      communicationType,
+      channel,
+    };
+
+    const draft = await prisma.communicationDraft.create({
       data: {
         analysisId,
-        communicationType: result.communicationType,
-        channel: result.channel,
+        communicationType,
+        channel,
         subject: result.subject,
         content: result.content,
       },
     });
+    console.info('[communication.completed]', {
+      operationId,
+      analysisId,
+      draftId: draft.id,
+    });
+    return draft;
   },
 
   async listDrafts(ownerId, analysisId) {

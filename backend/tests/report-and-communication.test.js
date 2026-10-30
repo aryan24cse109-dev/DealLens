@@ -60,9 +60,12 @@ test('serializes saved analysis and AI assessments into report data', () => {
 
 test('validates communication draft creation and editing', () => {
   assert.equal(createCommunicationSchema.safeParse({
+    additionalInstructions: 'Please keep the tone concise.',
+  }).success, true);
+  assert.equal(createCommunicationSchema.safeParse({
     communicationType: 'INTERNAL_LEGAL_REVIEW',
     channel: 'INTERNAL_NOTE',
-  }).success, true);
+  }).success, false);
   assert.equal(updateCommunicationSchema.safeParse({
     content: 'Updated content',
   }).success, true);

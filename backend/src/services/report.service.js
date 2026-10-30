@@ -26,10 +26,11 @@ function parseSummary(summary) {
 }
 
 function getReportFilePath(reportId, format) {
+  const extension = format === 'PDF' ? 'pdf' : format === 'TEXT' ? 'txt' : 'json';
   return path.resolve(
     process.cwd(),
     env.reportDir,
-    `${reportId}.${format === 'PDF' ? 'pdf' : 'json'}`,
+    `${reportId}.${extension}`,
   );
 }
 
@@ -157,6 +158,53 @@ function toPublicReport(report) {
   };
 }
 
+function serializeTextReport(reportData) {
+  const lines = [
+    reportData.report.title,
+    `Deal: ${reportData.deal.name}`,
+    `Status: ${reportData.deal.status}`,
+    '',
+    'Executive summary',
+    reportData.executiveSummary.text,
+    `Critical changes: ${reportData.executiveSummary.criticalChanges}`,
+    `High-severity changes: ${reportData.executiveSummary.highChanges}`,
+    '',
+    'Documents',
+    ...reportData.documents.map((item) => `${item.type}: ${item.originalName}`),
+    '',
+    'Detected changes',
+  ];
+
+  reportData.changes.forEach((change, index) => {
+    lines.push(
+      `${index + 1}. ${change.category} (${change.severity})`,
+      `Type: ${change.type}`,
+      `Old value: ${change.oldValue ?? '[none]'}`,
+      `New value: ${change.newValue ?? '[none]'}`,
+      `Explanation: ${change.explanation ?? '[none]'}`,
+    );
+    if (change.aiAssessment) {
+      lines.push(
+        `AI impact: ${change.aiAssessment.impact}`,
+        `Suggested action: ${change.aiAssessment.suggestedAction}`,
+        `AI severity: ${change.aiAssessment.severity}; confidence: ${change.aiAssessment.confidence}`,
+      );
+    }
+    lines.push('');
+  });
+
+  if (reportData.executiveSummary.recommendations.length) {
+    lines.push(
+      'Recommendations',
+      ...reportData.executiveSummary.recommendations.map(
+        (recommendation) => `- ${recommendation}`,
+      ),
+    );
+  }
+
+  return `${lines.join('\n')}\n`;
+}
+
 function writePdf(reportData, filePath) {
   return new Promise((resolve, reject) => {
     const document = new PDFDocument({ margin: 50 });
@@ -202,6 +250,7 @@ function writePdf(reportData, filePath) {
       } else {
         document.text('AI impact assessment: Not available.');
       }
+
       document.moveDown();
     });
 
@@ -228,9 +277,18 @@ export const reportService = {
   async createReport(ownerId, analysisId, input) {
     const analysis = await prisma.analysis.findFirst({
       where: { id: analysisId, deal: { ownerId } },
-      select: { id: true },
+      select: {
+        id: true,
+        _count: { select: { changes: true, aiAssessments: true } },
+      },
     });
     if (!analysis) throw new ReportServiceError('Analysis not found.', 404);
+    if (analysis._count.changes !== analysis._count.aiAssessments) {
+      throw new ReportServiceError(
+        'Run AI impact analysis before generating a report.',
+        422,
+      );
+    }
 
     const report = await prisma.report.create({
       data: { analysisId, title: input.title, format: input.format },
@@ -243,6 +301,8 @@ export const reportService = {
 
       if (report.format === 'JSON') {
         await writeFile(filePath, JSON.stringify(reportData, null, 2), 'utf8');
+      } else if (report.format === 'TEXT') {
+        await writeFile(filePath, serializeTextReport(reportData), 'utf8');
       } else {
         await writePdf(reportData, filePath);
       }
@@ -273,11 +333,11 @@ export const reportService = {
   },
 
   async getReport(ownerId, reportId) {
-    const report = await prisma.report.findFirst({
-      where: { id: reportId, analysis: { deal: { ownerId } } },
-    });
-    if (!report) throw new ReportServiceError('Report not found.', 404);
-    return toPublicReport(report);
+    const report = await loadReport(reportId, ownerId);
+    return {
+      ...toPublicReport(report),
+      data: serializeReport(report),
+    };
   },
 
   async getDownload(ownerId, reportId) {
@@ -300,8 +360,10 @@ export const reportService = {
         content: await readFile(filePath),
         contentType: report.format === 'PDF'
           ? 'application/pdf'
-          : 'application/json',
-        filename: `${report.title.replace(/[^a-z0-9._-]+/gi, '_')}.${report.format.toLowerCase()}`,
+          : report.format === 'TEXT'
+            ? 'text/plain; charset=utf-8'
+            : 'application/json',
+        filename: `${report.title.replace(/[^a-z0-9._-]+/gi, '_')}.${report.format === 'TEXT' ? 'txt' : report.format.toLowerCase()}`,
       };
     } catch (error) {
       if (error.code === 'ENOENT') {

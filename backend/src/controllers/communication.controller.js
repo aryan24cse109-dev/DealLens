@@ -4,6 +4,14 @@ import {
 } from '../validators/communication.schema.js';
 import { communicationService } from '../services/communication.service.js';
 
+function serializeDraft(draft) {
+  return {
+    ...draft,
+    draftId: draft.id,
+    body: draft.content,
+  };
+}
+
 export const communicationController = {
   async create(req, res, next) {
     try {
@@ -15,7 +23,7 @@ export const communicationController = {
       return res.status(201).json({
         success: true,
         message: 'Communication draft generated successfully.',
-        data: draft,
+        data: serializeDraft(draft),
       });
     } catch (error) {
       return next(error);
@@ -25,7 +33,10 @@ export const communicationController = {
   async list(req, res, next) {
     try {
       const drafts = await communicationService.listDrafts(req.user.id, req.params.analysisId);
-      return res.status(200).json({ success: true, data: drafts });
+      return res.status(200).json({
+        success: true,
+        data: drafts.map(serializeDraft),
+      });
     } catch (error) {
       return next(error);
     }
@@ -34,7 +45,7 @@ export const communicationController = {
   async get(req, res, next) {
     try {
       const draft = await communicationService.getDraft(req.user.id, req.params.draftId);
-      return res.status(200).json({ success: true, data: draft });
+      return res.status(200).json({ success: true, data: serializeDraft(draft) });
     } catch (error) {
       return next(error);
     }
@@ -47,7 +58,7 @@ export const communicationController = {
         req.params.draftId,
         updateCommunicationSchema.parse(req.body),
       );
-      return res.status(200).json({ success: true, data: draft });
+      return res.status(200).json({ success: true, data: serializeDraft(draft) });
     } catch (error) {
       return next(error);
     }

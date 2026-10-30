@@ -17,6 +17,7 @@ export default function ComparisonPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [progressMessage, setProgressMessage] = useState('');
 
   useEffect(() => {
     api.get('/deals', { params: { limit: 100 } })
@@ -46,6 +47,7 @@ export default function ComparisonPage() {
     event.preventDefault();
     setBusy(true);
     setError('');
+    setProgressMessage('Processing sequential AI batches. This may take a few minutes.');
     setAssessments([]);
     try {
       const response = await api.post('/comparisons/compare', {
@@ -67,8 +69,10 @@ export default function ComparisonPage() {
     try {
       const response = await api.post(`/analyses/${result.analysisId}/ai-impact`);
       setAssessments(response.data.data.assessments || []);
+      setProgressMessage('AI impact analysis completed.');
     } catch (requestError) {
       setError(getApiError(requestError, 'AI impact analysis failed.'));
+      setProgressMessage('');
     } finally {
       setBusy(false);
     }
@@ -80,6 +84,7 @@ export default function ComparisonPage() {
       <div><p className="eyebrow">Document analysis</p><h1 className="page-title">Compare documents</h1><p className="page-description">Select two owned PDFs to detect and classify contract changes.</p></div>
     </header>
     {error && <ErrorMessage message={error} onRetry={() => setError('')} />}
+    {progressMessage && <div className="card panel"><p>{progressMessage}</p></div>}
     {!deals.length && <div className="card empty-state">Create a deal and upload an original and revised PDF before comparing documents.</div>}
     {!!deals.length && <section className="card panel">
       <div className="section-title"><h2><FileDiff size={18} /> Comparison setup</h2></div>
