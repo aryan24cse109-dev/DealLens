@@ -1,6 +1,4 @@
-import { BarChart3, FileDiff, FileText, LayoutDashboard, MessageSquareText, Plus } from 'lucide-react';
+import { BarChart3, BriefcaseBusiness, FileBarChart, FileDiff, LayoutDashboard, MessageSquareText, Settings, Plus } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
-const links = [['/dashboard', LayoutDashboard, 'Dashboard'], ['/upload', Plus, 'New deal'], ['/comparison', FileDiff, 'Compare'], ['/report', FileText, 'Reports'], ['/communication', MessageSquareText, 'Drafts']];
-export default function Sidebar() {
-  return <aside className="sidebar"><div className="side-brand"><span>DL</span><strong>DealLens</strong></div><nav>{links.map(([to, Icon, label]) => <NavLink key={to} to={to} className={({ isActive }) => isActive ? 'active' : ''}><Icon size={18} />{label}</NavLink>)}</nav><div className="side-note"><BarChart3 size={17} /><span>Turn contract changes into clear decisions.</span></div></aside>;
-}
+const links = [['/dashboard', LayoutDashboard, 'Overview'], ['/deals', BriefcaseBusiness, 'Deals'], ['/upload', Plus, 'New deal'], ['/comparison', FileDiff, 'AI analyses'], ['/communication', MessageSquareText, 'Saved drafts'], ['/report', FileBarChart, 'Reports']];
+export default function Sidebar() { return <aside className="sidebar"><div className="side-brand"><span>DL</span><strong>DealLens</strong></div><p className="side-label">Workspace</p><nav>{links.map(([to, Icon, label]) => <NavLink key={to} to={to} className={({ isActive }) => isActive ? 'active' : ''}><Icon size={18} />{label}</NavLink>)}</nav><div className="sidebar-footer"><NavLink to="/settings"><Settings size={18} />Settings</NavLink><div className="side-note"><BarChart3 size={17} /><span>Turn contract changes into clear decisions.</span></div></div></aside>; }
