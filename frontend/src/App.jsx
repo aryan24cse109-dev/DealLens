@@ -8,7 +8,9 @@ import AnalysisPage from './pages/AnalysisPage';
 import ComparisonPage from './pages/ComparisonPage';
 import ReportPage from './pages/ReportPage';
 import CommunicationPage from './pages/CommunicationPage';
+import SettingsPage from './pages/SettingsPage';
+import { ThemeProvider } from './context/ThemeContext';
 
 export default function App() {
-  return <BrowserRouter><Routes><Route path="/login" element={<LoginPage />} /><Route element={<ProtectedRoute />}><Route element={<MainLayout />}><Route path="/" element={<Navigate to="/dashboard" replace />} /><Route path="/dashboard" element={<DashboardPage />} /><Route path="/upload" element={<UploadPage />} /><Route path="/comparison" element={<ComparisonPage />} /><Route path="/analyse/:analysisId" element={<AnalysisPage />} /><Route path="/report" element={<ReportPage />} /><Route path="/communication" element={<CommunicationPage />} /></Route></Route><Route path="*" element={<Navigate to="/" replace />} /></Routes></BrowserRouter>;
+  return <ThemeProvider><BrowserRouter><Routes><Route path="/login" element={<LoginPage />} /><Route element={<ProtectedRoute />}><Route element={<MainLayout />}><Route path="/" element={<Navigate to="/dashboard" replace />} /><Route path="/dashboard" element={<DashboardPage />} /><Route path="/upload" element={<UploadPage />} /><Route path="/comparison" element={<ComparisonPage />} /><Route path="/analyse/:analysisId" element={<AnalysisPage />} /><Route path="/report" element={<ReportPage />} /><Route path="/communication" element={<CommunicationPage />} /><Route path="/settings" element={<SettingsPage />} /></Route></Route><Route path="*" element={<Navigate to="/" replace />} /></Routes></BrowserRouter></ThemeProvider>;
 }

@@ -1,0 +1,7 @@
+import { Check, Moon, Monitor, Sun } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
+const options = [['light', Sun, 'Light', 'Bright, focused workspace'], ['dark', Moon, 'Dark', 'Easy on the eyes in low light'], ['system', Monitor, 'System', 'Follow your device preference']];
+export default function SettingsPage() {
+  const { theme, setTheme } = useTheme();
+  return <div className="page-shell"><header className="page-header"><div><p className="eyebrow">Workspace preferences</p><h1 className="page-title">Settings</h1><p className="page-description">Customize how DealLens looks and feels.</p></div></header><section className="card panel"><div className="section-title"><div><h2>Appearance</h2><p>Choose the theme used across your workspace.</p></div></div><div className="metric-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>{options.map(([value, Icon, label, description]) => <button key={value} type="button" className={`card panel ${theme === value ? 'selected-theme' : ''}`} onClick={() => setTheme(value)} style={{ textAlign: 'left', borderColor: theme === value ? 'var(--violet)' : undefined, position: 'relative' }}><Icon size={20} color="var(--violet)" /><strong style={{ display: 'block', marginTop: 12 }}>{label}</strong><span className="muted">{description}</span>{theme === value && <Check size={16} color="var(--violet)" style={{ position: 'absolute', top: 14, right: 14 }} />}</button>)}</div></section></div>;
+}

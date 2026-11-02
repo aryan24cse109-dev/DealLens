@@ -92,10 +92,13 @@ export default function CommunicationPage() {
 
   async function copyEmail() {
     if (!selected) return;
-    await navigator.clipboard.writeText(
-      `${selected.subject || ''}\n\n${selected.content}`,
-    );
-    setCopied(true);
+    try {
+      await navigator.clipboard.writeText(`${selected.subject || ''}\n\n${selected.content}`);
+      setCopied(true);
+      setError('');
+    } catch (requestError) {
+      setError(getApiError(requestError, 'Unable to copy the draft to your clipboard.'));
+    }
   }
 
   async function remove(draft) {
