@@ -1,4 +1,4 @@
-import { Download, FileBarChart, MessageSquareText, Plus } from 'lucide-react';
+import { Download, FileBarChart, MessageSquareText, Plus, ArrowLeft } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import api, { getApiError } from '../services/api';
@@ -62,13 +62,14 @@ export default function ReportPage() {
       setError(getApiError(requestError, 'Unable to download report.'));
     }
 
-    async function showDetail(report) {
-      try {
-        const response = await api.get(`/reports/${report.id}`);
-        setDetail(response.data.data);
-      } catch (requestError) {
-        setError(getApiError(requestError, 'Unable to load report details.'));
-      }
+  }
+
+  async function showDetail(report) {
+    try {
+      const response = await api.get(`/reports/${report.id}`);
+      setDetail(response.data.data);
+    } catch (requestError) {
+      setError(getApiError(requestError, 'Unable to load report details.'));
     }
   }
 

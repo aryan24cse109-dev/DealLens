@@ -1,12 +1,13 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
+const STORAGE_KEY = 'deallens-theme';
 const ThemeContext = createContext(null);
 export function ThemeProvider({ children }) {
-  const [preference, setPreference] = useState('system');
+  const [preference, setPreference] = useState(() => window.localStorage.getItem(STORAGE_KEY) || 'system');
   const [resolvedTheme, setResolvedTheme] = useState('light');
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, preference);
+    window.localStorage.setItem(STORAGE_KEY, preference);
     const media = window.matchMedia('(prefers-color-scheme: dark)');
     const apply = () => {
       const theme = preference === 'system' ? (media.matches ? 'dark' : 'light') : preference;
