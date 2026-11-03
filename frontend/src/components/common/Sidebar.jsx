@@ -1,33 +1,32 @@
 import {
   BarChart3,
-  BriefcaseBusiness,
-  FileBarChart,
   FileDiff,
+  FileText,
   LayoutDashboard,
   MessageSquareText,
-  Settings,
-  Plus
+  Plus,
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 
 const links = [
-  ['/dashboard', LayoutDashboard, 'Overview'],
-  ['/deals', BriefcaseBusiness, 'Deals'],
-  ['/upload', Plus, 'New Deal'],
-  ['/analyses', FileDiff, 'AI Analyses'],
-  ['/drafts', MessageSquareText, 'Saved Drafts'],
-  ['/reports', FileBarChart, 'Reports']
+  ['/dashboard', LayoutDashboard, 'Dashboard'],
+  ['/upload', Plus, 'New deal'],
+  ['/comparison', FileDiff, 'Compare'],
+  ['/report', FileText, 'Reports'],
+  ['/communication', MessageSquareText, 'Drafts'],
 ];
 
 export default function Sidebar() {
   return (
     <aside className="sidebar">
       <div className="side-brand">
-        <span>DL</span>
+        <img
+          src="/favicon.png"
+          alt="DealLens"
+          className="side-brand-icon"
+        />
         <strong>DealLens</strong>
       </div>
-
-      <p className="side-label">Workspace</p>
 
       <nav>
         {links.map(([to, Icon, label]) => (
@@ -42,16 +41,9 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      <div className="sidebar-footer">
-        <NavLink to="/settings">
-          <Settings size={18} />
-          Settings
-        </NavLink>
-
-        <div className="side-note">
-          <BarChart3 size={17} />
-          <span>Turn contract changes into clear decisions.</span>
-        </div>
+      <div className="side-note">
+        <BarChart3 size={17} />
+        <span>Turn contract changes into clear decisions.</span>
       </div>
     </aside>
   );
