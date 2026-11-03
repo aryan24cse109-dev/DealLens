@@ -41,7 +41,7 @@ Upload an original and a revised agreement, and DealLens detects what changed, c
 | Live Frontend | https://deal-lens-ten.vercel.app |
 | Backend API | https://deallens-backend-9f9c.onrender.com |
 | AI Service | https://deallens-ai-service.onrender.com |
-| YouTube Demo | `[ADD_YOUTUBE_VIDEO_URL]` |
+| YouTube Demo | `[https://youtu.be/XoIwsZcT97A?si=Mm9qRuLtVU5_NH7r]` |
 
 > [!NOTE]
 > The backend and AI service are hosted on Render's free tier and may take some time to wake up after a period of inactivity. If the first request is slow or fails, wait a moment and try again.
