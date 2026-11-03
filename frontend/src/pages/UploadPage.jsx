@@ -94,7 +94,7 @@ export default function UploadPage() {
 
   if (loading) return <div className="page-shell"><Loader label="Loading your deals…" /></div>;
   return <div className="page-shell">
-    <header className="page-header"><div><p className="eyebrow">Deal workspace</p><h1 className="page-title">Create a deal</h1><p className="page-description">Upload the contract versions, then start a complete analysis.</p></div></header>
+    <header className="page-header"><div><p className="eyebrow">Deal workspace</p><h1 className="page-title">Upload documents</h1><p className="page-description">Create a deal workspace, identify the original and revised contracts, and continue into analysis.</p></div></header>
     {error && <ErrorMessage message={error} onRetry={() => setError('')} />}
     <form className="workflow-form" onSubmit={startAnalysis}>
       <section className="card panel"><div className="section-title"><h2><Plus size={18} /> Deal details</h2></div><div className="form-grid"><label>Deal name<input value={name} onChange={(event) => setName(event.target.value)} minLength="2" maxLength="200" required /></label><label>Description<textarea value={description} onChange={(event) => setDescription(event.target.value)} maxLength="2000" rows="3" /></label></div></section>

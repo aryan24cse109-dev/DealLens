@@ -274,6 +274,54 @@ async function removeFile(filePath) {
 }
 
 export const reportService = {
+  async listAllReports({ ownerId, page = 1, limit = 20, search = '', format }) {
+    const safePage = Math.max(1, Number(page) || 1);
+    const safeLimit = Math.min(100, Math.max(1, Number(limit) || 20));
+    const normalizedSearch = String(search).trim();
+    const where = {
+      ...(format ? { format } : {}),
+      analysis: {
+        deal: {
+          ownerId,
+          ...(normalizedSearch
+            ? {
+                name: { contains: normalizedSearch, mode: 'insensitive' },
+              }
+            : {}),
+        },
+      },
+    };
+    const [items, total] = await Promise.all([
+      prisma.report.findMany({
+        where,
+        skip: (safePage - 1) * safeLimit,
+        take: safeLimit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          analysis: {
+            select: {
+              id: true,
+              deal: { select: { id: true, name: true } },
+            },
+          },
+        },
+      }),
+      prisma.report.count({ where }),
+    ]);
+    return {
+      items: items.map((report) => ({
+        ...toPublicReport(report),
+        deal: report.analysis.deal,
+      })),
+      pagination: {
+        page: safePage,
+        limit: safeLimit,
+        total,
+        totalPages: Math.ceil(total / safeLimit),
+      },
+    };
+  },
+
   async createReport(ownerId, analysisId, input) {
     const analysis = await prisma.analysis.findFirst({
       where: { id: analysisId, deal: { ownerId } },
@@ -313,6 +361,10 @@ export const reportService = {
       });
       return toPublicReport(savedReport);
     } catch (error) {
+      const filePath = getReportFilePath(report.id, report.format);
+      if (isInsideReportDirectory(filePath)) {
+        await removeFile(filePath);
+      }
       await prisma.report.delete({ where: { id: report.id } }).catch(() => {});
       throw error;
     }

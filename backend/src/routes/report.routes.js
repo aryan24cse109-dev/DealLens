@@ -6,6 +6,7 @@ import { requireSameOrigin } from '../middleware/csrf.middleware.js';
 const router = Router();
 router.use(requireAuth, requireSameOrigin);
 
+router.get('/reports', reportController.listAll);
 router.post('/analyses/:analysisId/reports', reportController.create);
 router.get('/analyses/:analysisId/reports', reportController.list);
 router.get('/reports/:reportId/download', reportController.download);

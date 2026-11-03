@@ -49,13 +49,20 @@ export async function analyzeVerifiedChanges(input) {
     systemPrompt: IMPACT_ANALYSIS_SYSTEM_PROMPT,
     userPrompt,
     maxOutputTokens: parsedInput.maxOutputTokens,
-    responseFormat: null,
+    responseFormat: { type: 'json_object' },
   });
 
-  const validated = parseAndValidateImpactOutput(
-    generated.content,
-    safeChanges.map((change) => change.id),
-  );
+  let validated;
+  try {
+    validated = parseAndValidateImpactOutput(
+      generated.content,
+      safeChanges.map((change) => change.id),
+    );
+  } catch (error) {
+    error.name = 'AiOutputError';
+    error.status = 422;
+    throw error;
+  }
 
   return {
     assessments: validated.assessments,

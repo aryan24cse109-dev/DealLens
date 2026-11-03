@@ -15,6 +15,11 @@ export async function runImpactAnalysis(req, res, next) {
         })),
       });
     }
+    if (error.name === 'AiOutputError') {
+      return res.status(422).json({
+        error: error.message,
+      });
+    }
     return next(error);
   }
 }
@@ -25,8 +30,7 @@ export async function runCommunicationGeneration(req, res, next) {
     return res.status(200).json(result);
   } catch (error) {
     if (
-      error.name === 'ZodError' ||
-      error.message === 'AI returned invalid communication JSON.'
+      error.name === 'ZodError'
     ) {
       return res.status(400).json({
         error: 'Invalid communication-generation request or response.',
@@ -34,6 +38,11 @@ export async function runCommunicationGeneration(req, res, next) {
           path: issue.path.join('.'),
           message: issue.message,
         })),
+      });
+    }
+    if (error.name === 'AiOutputError') {
+      return res.status(422).json({
+        error: error.message,
       });
     }
     return next(error);

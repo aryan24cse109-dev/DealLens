@@ -1,12 +1,14 @@
 import { ArrowRight, FileDiff, FileText, MessageSquareText, Sparkles } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import api, { getApiError } from '../services/api';
 import Loader from '../components/common/Loader';
 import ErrorMessage from '../components/common/ErrorMessage';
 
 export default function ComparisonPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const requestedDealId = searchParams.get('dealId') || '';
   const [deals, setDeals] = useState([]);
   const [dealId, setDealId] = useState('');
   const [documents, setDocuments] = useState([]);
@@ -24,11 +26,19 @@ export default function ComparisonPage() {
       .then(({ data }) => {
         const items = data.items || [];
         setDeals(items);
-        if (items[0]) setDealId(items[0].id);
+        const requestedDeal = items.find((item) => item.id === requestedDealId);
+        if (requestedDeal) {
+          setDealId(requestedDeal.id);
+        } else if (!requestedDealId && items[0]) {
+          setDealId(items[0].id);
+        } else {
+          setDealId('');
+          if (requestedDealId) setError('The selected deal is unavailable.');
+        }
       })
       .catch((requestError) => setError(getApiError(requestError, 'Deals unavailable.')))
       .finally(() => setLoading(false));
-  }, []);
+  }, [requestedDealId]);
 
   useEffect(() => {
     if (!dealId) return;
@@ -47,7 +57,7 @@ export default function ComparisonPage() {
     event.preventDefault();
     setBusy(true);
     setError('');
-    setProgressMessage('Processing sequential AI batches. This may take a few minutes.');
+    setProgressMessage('Comparing the selected documents. This may take a moment.');
     setAssessments([]);
     try {
       const response = await api.post('/comparisons/compare', {

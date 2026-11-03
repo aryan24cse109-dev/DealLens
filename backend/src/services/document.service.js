@@ -88,7 +88,7 @@ export const documentService = {
       throw new DocumentServiceError('Deal not found.', 404);
     }
 
-    return documentRepository.findByDealId(dealId);
+    return documentRepository.findByDealId(dealId, ownerId);
   },
 
   async getDocument(id, ownerId) {

@@ -73,6 +73,23 @@ function buildActivity({ deals, documents, analyses, reports, drafts }) {
     .slice(0, 20);
 }
 
+function countCompletedWorkflows(workflowAnalyses) {
+  const completedDealIds = new Set();
+
+  for (const analysis of workflowAnalyses) {
+    if (
+      analysis._count.changes > 0
+      && analysis._count.aiAssessments === analysis._count.changes
+      && analysis._count.reports > 0
+      && analysis._count.drafts > 0
+    ) {
+      completedDealIds.add(analysis.dealId);
+    }
+  }
+
+  return completedDealIds.size;
+}
+
 export const dashboardService = {
   async getSummary({ from, to, limit, ownerId }) {
     const dateWhere = getDateWhere({ from, to });
@@ -95,6 +112,7 @@ export const dashboardService = {
       totalDocuments,
       totalAnalyses,
       totalChanges,
+      totalSavedDrafts,
       completedAnalyses,
       failedAnalyses,
       pendingAnalyses,
@@ -110,11 +128,13 @@ export const dashboardService = {
       recentActivityAnalyses,
       recentActivityReports,
       recentActivityDrafts,
+      workflowAnalyses,
     ] = await Promise.all([
       prisma.deal.count({ where: dealWhere }),
       prisma.document.count({ where: documentWhere }),
       prisma.analysis.count({ where: analysisWhere }),
       prisma.change.count({ where: changeWhere }),
+      prisma.communicationDraft.count({ where: draftWhere }),
       prisma.analysis.count({ where: { ...analysisWhere, status: 'COMPLETED' } }),
       prisma.analysis.count({ where: { ...analysisWhere, status: 'FAILED' } }),
       prisma.analysis.count({ where: { ...analysisWhere, status: 'PENDING' } }),
@@ -244,7 +264,23 @@ export const dashboardService = {
           },
         },
       }),
+      prisma.analysis.findMany({
+        where: analysisWhere,
+        select: {
+          dealId: true,
+          _count: {
+            select: {
+              changes: true,
+              aiAssessments: true,
+              reports: true,
+              drafts: true,
+            },
+          },
+        },
+      }),
     ]);
+
+    const completedWorkflows = countCompletedWorkflows(workflowAnalyses);
 
     const severityDistribution = {
       ...initializeCounts(CHANGE_SEVERITIES),
@@ -261,6 +297,9 @@ export const dashboardService = {
         totalDocuments,
         totalAnalyses,
         totalChanges,
+        totalSavedDrafts,
+        completedWorkflows,
+        pendingWorkflows: Math.max(totalDeals - completedWorkflows, 0),
         completedAnalyses,
         failedAnalyses,
         pendingAnalyses,
@@ -286,4 +325,4 @@ export const dashboardService = {
   },
 };
 
-export { buildActivity, getDateWhere };
+export { buildActivity, countCompletedWorkflows, getDateWhere };

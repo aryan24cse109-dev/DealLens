@@ -17,7 +17,6 @@ export const documentRepository = {
         originalName: true,
         mimeType: true,
         sizeBytes: true,
-        extractedText: true,
         createdAt: true,
       },
     });

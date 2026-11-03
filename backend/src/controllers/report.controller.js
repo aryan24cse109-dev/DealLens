@@ -1,7 +1,28 @@
 import { createReportSchema } from '../validators/report.schema.js';
 import { reportService } from '../services/report.service.js';
+import { z } from 'zod';
+
+const listQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  search: z.string().trim().max(200).default(''),
+  format: z.enum(['PDF', 'TEXT', 'JSON']).optional(),
+}).strict();
 
 export const reportController = {
+  async listAll(req, res, next) {
+    try {
+      const query = listQuerySchema.parse(req.query);
+      const result = await reportService.listAllReports({
+        ...query,
+        ownerId: req.user.id,
+      });
+      return res.status(200).json({ success: true, data: result });
+    } catch (error) {
+      return next(error);
+    }
+  },
+
   async create(req, res, next) {
     try {
       const report = await reportService.createReport(

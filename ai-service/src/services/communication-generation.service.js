@@ -44,10 +44,20 @@ export async function generateCommunication(input) {
   try {
     parsedOutput = parseJsonObject(generated.content);
   } catch {
-    throw new Error('AI returned invalid communication JSON.');
+    const error = new Error('AI returned invalid communication JSON.');
+    error.name = 'AiOutputError';
+    error.status = 422;
+    throw error;
   }
 
-  const result = normalizeGeneratedCommunication(parsedOutput, parsedInput);
+  let result;
+  try {
+    result = normalizeGeneratedCommunication(parsedOutput, parsedInput);
+  } catch (error) {
+    error.name = 'AiOutputError';
+    error.status = 422;
+    throw error;
+  }
 
   return { ...result, model: generated.model, usage: generated.usage };
 }

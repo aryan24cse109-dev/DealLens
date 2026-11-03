@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { dashboardQuerySchema } from '../src/validators/dashboard.schema.js';
 import {
   buildActivity,
+  countCompletedWorkflows,
   getDateWhere,
 } from '../src/services/dashboard.service.js';
 
@@ -54,6 +55,25 @@ test('merges recent records into descending activity', () => {
     analyses: [],
     reports: [],
     drafts: [],
+  });
+
+  test('counts completed workflows once per deal across multiple analyses', () => {
+    const complete = {
+      _count: { changes: 2, aiAssessments: 2, reports: 1, drafts: 1 },
+    };
+
+    assert.equal(
+      countCompletedWorkflows([
+        { dealId: 'deal-1', ...complete },
+        { dealId: 'deal-1', ...complete },
+        { dealId: 'deal-2', ...complete },
+        {
+          dealId: 'deal-3',
+          _count: { changes: 1, aiAssessments: 0, reports: 1, drafts: 1 },
+        },
+      ]),
+      2,
+    );
   });
 
   assert.deepEqual(

@@ -89,7 +89,9 @@ async function requestAiService(
 
       if (!response.ok) {
         const retryAfterMs = getRetryDelay(response);
-        const status = response.status === 400 || response.status === 413
+        const status = response.status === 400
+          || response.status === 413
+          || response.status === 422
           ? response.status
           : response.status === 429
             ? 429

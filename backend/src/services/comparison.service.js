@@ -15,7 +15,6 @@ import {
   impactAnalysisSchema,
 } from '../validators/impact-analysis.schema.js';
 
-import { normalizeText } from '../utils/text-normalizer.js';
 
 export class ComparisonServiceError extends Error {
   constructor(message, status = 500) {
@@ -121,63 +120,6 @@ export const comparisonService = {
       throw error;
     }
 
-    const originalNormalized = normalizeText(originalDocument.extractedText);
-const revisedNormalized = normalizeText(revisedDocument.extractedText);
-
-console.log('========== TEXT COMPARISON DEBUG ==========');
-
-console.log(
-  'Raw text identical:',
-  originalDocument.extractedText === revisedDocument.extractedText
-);
-
-console.log(
-  'Normalized text identical:',
-  originalNormalized === revisedNormalized
-);
-
-console.log(
-  'Original normalized lines:',
-  originalNormalized.split('\n').length
-);
-
-console.log(
-  'Revised normalized lines:',
-  revisedNormalized.split('\n').length
-);
-
-console.log('===========================================');
-
-        // Temporary debugging logs
-    console.log('========== COMPARISON DEBUG ==========');
-
-    console.log(
-      'Original document:',
-      originalDocument.id,
-      originalDocument.type,
-    );
-
-    console.log(
-      'Revised document:',
-      revisedDocument.id,
-      revisedDocument.type,
-    );
-
-    console.log(
-      'Original text length:',
-      originalDocument.extractedText.length,
-    );
-
-    console.log(
-      'Revised text length:',
-      revisedDocument.extractedText.length,
-    );
-
-    console.log('Diff summary:', diff.summary);
-    console.log('Detected changes:', diff.changes.length);
-
-    console.log('======================================');
-
     // Analyze only changes detected by the deterministic diff engine.
     const analyzedChanges = diff.changes.map((change) => {
       const assessment = assessContractChange(change);
@@ -223,6 +165,11 @@ console.log('===========================================');
           orderBy: { createdAt: 'asc' },
         },
       },
+    });
+
+    await prisma.deal.update({
+      where: { id: originalDocument.dealId },
+      data: { status: 'ANALYZED' },
     });
 
     return {

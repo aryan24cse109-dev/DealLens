@@ -3,6 +3,7 @@ import {
   updateCommunicationSchema,
 } from '../validators/communication.schema.js';
 import { communicationService } from '../services/communication.service.js';
+import { z } from 'zod';
 
 function serializeDraft(draft) {
   return {
@@ -12,7 +13,32 @@ function serializeDraft(draft) {
   };
 }
 
+const listQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  search: z.string().trim().max(200).default(''),
+}).strict();
+
 export const communicationController = {
+  async listAll(req, res, next) {
+    try {
+      const query = listQuerySchema.parse(req.query);
+      const result = await communicationService.listAllDrafts({
+        ...query,
+        ownerId: req.user.id,
+      });
+      return res.status(200).json({
+        success: true,
+        data: {
+          ...result,
+          items: result.items.map(serializeDraft),
+        },
+      });
+    } catch (error) {
+      return next(error);
+    }
+  },
+
   async create(req, res, next) {
     try {
       const draft = await communicationService.createDraft(

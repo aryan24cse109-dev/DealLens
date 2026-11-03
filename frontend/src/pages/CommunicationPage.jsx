@@ -8,6 +8,7 @@ import Loader from '../components/common/Loader';
 export default function CommunicationPage() {
   const [searchParams] = useSearchParams();
   const analysisId = searchParams.get('analysisId') || '';
+  const draftId = searchParams.get('draftId') || '';
   const [analysis, setAnalysis] = useState(null);
   const [instructions, setInstructions] = useState('');
   const [drafts, setDrafts] = useState([]);
@@ -23,14 +24,23 @@ export default function CommunicationPage() {
     setLoading(true);
     setError('');
     try {
-      const [analysisResponse, draftsResponse] = await Promise.all([
+      const [analysisResponse, draftsResponse, selectedDraftResponse] = await Promise.all([
         api.get(`/analyses/${analysisId}`),
         api.get(`/analyses/${analysisId}/communications`),
+        draftId ? api.get(`/communications/${draftId}`) : Promise.resolve(null),
       ]);
       const loadedDrafts = draftsResponse.data.data || [];
       setAnalysis(analysisResponse.data.data);
       setDrafts(loadedDrafts);
-      setSelected((current) => current || loadedDrafts[0] || null);
+      if (draftId) {
+        const requestedDraft = selectedDraftResponse?.data?.data;
+        if (!requestedDraft || requestedDraft.analysisId !== analysisId) {
+          throw new Error('The selected draft is unavailable.');
+        }
+        setSelected(requestedDraft);
+      } else {
+        setSelected((current) => current || loadedDrafts[0] || null);
+      }
     } catch (requestError) {
       setError(getApiError(requestError, 'Communication context unavailable.'));
     } finally {
@@ -92,10 +102,15 @@ export default function CommunicationPage() {
 
   async function copyEmail() {
     if (!selected) return;
-    await navigator.clipboard.writeText(
-      `${selected.subject || ''}\n\n${selected.content}`,
-    );
-    setCopied(true);
+    try {
+      await navigator.clipboard.writeText(
+        `${selected.subject || ''}\n\n${selected.content}`,
+      );
+      setCopied(true);
+      setError('');
+    } catch (requestError) {
+      setError(getApiError(requestError, 'Unable to copy the email. Please copy it manually.'));
+    }
   }
 
   async function remove(draft) {

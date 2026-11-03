@@ -19,6 +19,53 @@ export class AnalysisServiceError extends Error {
 const activeImpactRuns = new Map();
 
 export const analysisService = {
+  async listAnalyses({ ownerId, page = 1, limit = 20, search = '', status }) {
+    const safePage = Math.max(1, Number(page) || 1);
+    const safeLimit = Math.min(100, Math.max(1, Number(limit) || 20));
+    const normalizedSearch = String(search).trim();
+    const where = {
+      deal: {
+        ownerId,
+        ...(normalizedSearch
+          ? {
+              name: { contains: normalizedSearch, mode: 'insensitive' },
+            }
+          : {}),
+      },
+      ...(status ? { status } : {}),
+    };
+
+    const [items, total] = await Promise.all([
+      prisma.analysis.findMany({
+        where,
+        skip: (safePage - 1) * safeLimit,
+        take: safeLimit,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          dealId: true,
+          summary: true,
+          status: true,
+          createdAt: true,
+          updatedAt: true,
+          deal: { select: { id: true, name: true, status: true } },
+          _count: { select: { changes: true, aiAssessments: true, reports: true, drafts: true } },
+        },
+      }),
+      prisma.analysis.count({ where }),
+    ]);
+
+    return {
+      items,
+      pagination: {
+        page: safePage,
+        limit: safeLimit,
+        total,
+        totalPages: Math.ceil(total / safeLimit),
+      },
+    };
+  },
+
   async getAnalysis(analysisId, ownerId) {
     const analysis = await prisma.analysis.findFirst({
       where: { id: analysisId, deal: { ownerId } },
@@ -108,12 +155,51 @@ export const analysisService = {
     const configuredSafeBatchSize = Number.isInteger(env.aiSafeBatchSize)
       && env.aiSafeBatchSize > 0
       ? env.aiSafeBatchSize
-      : 10;
+      : 5;
     const batchSize = Number.isInteger(env.aiMaxChangesPerRequest)
       && env.aiMaxChangesPerRequest > 0
       ? Math.min(env.aiMaxChangesPerRequest, configuredSafeBatchSize, 50)
       : Math.min(configuredSafeBatchSize, 50);
+    const existingAssessments = await prisma.aiAssessment.findMany({
+      where: {
+        analysisId: analysis.id,
+        changeId: { in: changes.map((change) => change.id) },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+    const assessedChangeIds = new Set(
+      existingAssessments.map((assessment) => assessment.changeId),
+    );
     const results = [];
+    const persistAssessments = async (assessments, model) => {
+      await prisma.$transaction(async (transaction) => {
+        for (const assessment of assessments) {
+          await transaction.aiAssessment.upsert({
+            where: { changeId: assessment.changeId },
+            create: {
+              analysisId: analysis.id,
+              changeId: assessment.changeId,
+              category: assessment.category,
+              impact: assessment.impact,
+              explanation: assessment.explanation,
+              suggestedAction: assessment.suggestedAction,
+              severity: assessment.severity,
+              confidence: assessment.confidence,
+              model: model ?? null,
+            },
+            update: {
+              category: assessment.category,
+              impact: assessment.impact,
+              explanation: assessment.explanation,
+              suggestedAction: assessment.suggestedAction,
+              severity: assessment.severity,
+              confidence: assessment.confidence,
+              model: model ?? null,
+            },
+          });
+        }
+      });
+    };
     const batches = splitChangesByTokenBudget(changes, {
       maxChanges: batchSize,
       maxPromptTokens: Number.isInteger(env.aiMaxPromptTokens)
@@ -127,7 +213,9 @@ export const analysisService = {
       totalChanges: changes.length,
       totalBatches: batches.length,
     });
-    for (const [index, batch] of batches.entries()) {
+    for (const [index, originalBatch] of batches.entries()) {
+      const batch = originalBatch.filter((change) => !assessedChangeIds.has(change.id));
+      if (!batch.length) continue;
       const batchStartedAt = Date.now();
       console.info('[analysis.batch.started]', {
         operationId,
@@ -146,6 +234,9 @@ export const analysisService = {
           batch: `${index + 1}/${batches.length}`,
         });
         results.push(result);
+        const batchAssessments = aiImpactAssessmentListSchema.parse(result.assessments);
+        await persistAssessments(batchAssessments, result.model);
+        batchAssessments.forEach((assessment) => assessedChangeIds.add(assessment.changeId));
         console.info('[analysis.batch.completed]', {
           operationId,
           analysisId,
@@ -170,9 +261,10 @@ export const analysisService = {
       }
     }
 
-    const assessments = aiImpactAssessmentListSchema.parse(
-      results.flatMap((result) => result.assessments),
-    );
+    const assessments = await prisma.aiAssessment.findMany({
+      where: { analysisId: analysis.id },
+      orderBy: { createdAt: 'asc' },
+    });
     const expectedChangeIds = new Set(changes.map((change) => change.id));
     const returnedChangeIds = new Set(
       assessments.map((assessment) => assessment.changeId),
@@ -189,43 +281,18 @@ export const analysisService = {
       );
     }
 
-    const persistedAssessments = await prisma.$transaction(async (transaction) => {
-      await transaction.aiAssessment.deleteMany({
-        where: { analysisId: analysis.id },
-      });
-
-      await transaction.aiAssessment.createMany({
-        data: assessments.map((assessment) => ({
-          analysisId: analysis.id,
-          changeId: assessment.changeId,
-          category: assessment.category,
-          impact: assessment.impact,
-          explanation: assessment.explanation,
-          suggestedAction: assessment.suggestedAction,
-          severity: assessment.severity,
-          confidence: assessment.confidence,
-          model: results[0]?.model ?? null,
-        })),
-      });
-
-      return transaction.aiAssessment.findMany({
-        where: { analysisId: analysis.id },
-        orderBy: { createdAt: 'asc' },
-      });
-    });
-
     console.info('[analysis.completed]', {
       operationId,
       analysisId,
       totalBatches: batches.length,
-      assessmentCount: persistedAssessments.length,
+      assessmentCount: assessments.length,
     });
     return {
       analysisId: analysis.id,
       dealId: analysis.dealId,
-      model: results[0]?.model ?? null,
+      model: assessments[0]?.model ?? results[0]?.model ?? null,
       usage: results.map((result) => result.usage).filter(Boolean),
-      assessments: persistedAssessments,
+      assessments,
     };
   },
 };

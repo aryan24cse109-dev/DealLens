@@ -1,6 +1,4 @@
-import { LogOut } from 'lucide-react';
+import { LogOut, Sun, Moon } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-export default function Navbar() {
-  const { user, logout, logoutError, isLoggingOut } = useAuth();
-  return <header className="navbar"><div className="mobile-title">DealLens</div>{logoutError && <span className="logout-error" role="alert">{logoutError}</span>}<div className="user-menu"><div className="avatar">{(user?.name || user?.email || 'U').slice(0, 1).toUpperCase()}</div><div className="user-copy"><strong>{user?.name || 'Workspace user'}</strong><span>{user?.email}</span></div><button className="icon-button" title="Log out" onClick={logout} disabled={isLoggingOut}><LogOut size={17} /></button></div></header>;
-}
+import { useTheme } from '../../context/ThemeContext';
+export default function Navbar() { const { user, logout, logoutError, isLoggingOut } = useAuth(); const { resolvedTheme, setPreference } = useTheme(); return <header className="navbar"><div className="mobile-title"><span className="brand-mark">DL</span> DealLens</div>{logoutError && <span className="logout-error" role="alert">{logoutError}</span>}<div className="user-menu"><button className="icon-button" title="Toggle theme" onClick={() => setPreference(resolvedTheme === 'dark' ? 'light' : 'dark')}>{resolvedTheme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}</button><div className="avatar">{(user?.name || user?.email || 'U').slice(0, 1).toUpperCase()}</div><div className="user-copy"><strong>{user?.name || 'Workspace user'}</strong><span>{user?.email}</span></div><button className="icon-button" title="Log out" onClick={logout} disabled={isLoggingOut}><LogOut size={17} /></button></div></header>; }

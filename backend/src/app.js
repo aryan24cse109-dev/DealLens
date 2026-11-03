@@ -28,6 +28,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
 
 app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/health', healthRoutes);
 app.use('/api/v1/analyses', analysisRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
 app.use('/api/v1', reportRoutes);
@@ -41,7 +42,6 @@ app.get('/api/v1', (req, res) => {
   });
 });
 
-app.use('/api/v1/health', healthRoutes);
 app.use('/api/v1/deals', dealRoutes);
 
 app.use((req, res) => {

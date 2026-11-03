@@ -64,6 +64,50 @@ function compactText(value, limit = 16) {
 }
 
 export const communicationService = {
+  async listAllDrafts({ ownerId, page = 1, limit = 20, search = '' }) {
+    const safePage = Math.max(1, Number(page) || 1);
+    const safeLimit = Math.min(100, Math.max(1, Number(limit) || 20));
+    const normalizedSearch = String(search).trim();
+    const where = {
+      analysis: {
+        deal: {
+          ownerId,
+          ...(normalizedSearch
+            ? {
+                name: { contains: normalizedSearch, mode: 'insensitive' },
+              }
+            : {}),
+        },
+      },
+    };
+    const [items, total] = await Promise.all([
+      prisma.communicationDraft.findMany({
+        where,
+        skip: (safePage - 1) * safeLimit,
+        take: safeLimit,
+        orderBy: { updatedAt: 'desc' },
+        include: {
+          analysis: {
+            select: {
+              id: true,
+              deal: { select: { id: true, name: true } },
+            },
+          },
+        },
+      }),
+      prisma.communicationDraft.count({ where }),
+    ]);
+    return {
+      items,
+      pagination: {
+        page: safePage,
+        limit: safeLimit,
+        total,
+        totalPages: Math.ceil(total / safeLimit),
+      },
+    };
+  },
+
   async createDraft(ownerId, analysisId, input) {
     const operationId = randomUUID();
     console.info('[communication.started]', { operationId, analysisId });
