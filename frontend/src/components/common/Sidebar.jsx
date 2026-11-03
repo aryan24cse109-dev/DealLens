@@ -1,19 +1,27 @@
+
 import {
-  BarChart3,
+  LayoutDashboard,
+  BriefcaseBusiness,
+  BrainCircuit,
   FileDiff,
   FileText,
-  LayoutDashboard,
   MessageSquareText,
+  Settings,
   Plus,
+  BarChart3,
 } from 'lucide-react';
+
 import { NavLink } from 'react-router-dom';
 
 const links = [
   ['/dashboard', LayoutDashboard, 'Dashboard'],
-  ['/upload', Plus, 'New deal'],
+  ['/deals', BriefcaseBusiness, 'Saved Deals'],
+  ['/analyses', BrainCircuit, 'AI Analyses'],
+  ['/upload', Plus, 'New Deal'],
   ['/comparison', FileDiff, 'Compare'],
-  ['/report', FileText, 'Reports'],
-  ['/communication', MessageSquareText, 'Drafts'],
+  ['/reports', FileText, 'Saved Reports'],
+  ['/drafts', MessageSquareText, 'Saved Drafts'],
+  ['/settings', Settings, 'Settings'],
 ];
 
 export default function Sidebar() {
@@ -21,11 +29,10 @@ export default function Sidebar() {
     <aside className="sidebar">
       <div className="side-brand">
         <img
-          src="/favicon.png"
+          src="/deallens-logo.png"
           alt="DealLens"
-          className="side-brand-icon"
+          className="side-brand-logo"
         />
-        <strong>DealLens</strong>
       </div>
 
       <nav>
@@ -33,10 +40,11 @@ export default function Sidebar() {
           <NavLink
             key={to}
             to={to}
-            className={({ isActive }) => isActive ? 'active' : ''}
+            end
+            className={({ isActive }) => (isActive ? 'active' : '')}
           >
             <Icon size={18} />
-            {label}
+            <span>{label}</span>
           </NavLink>
         ))}
       </nav>
