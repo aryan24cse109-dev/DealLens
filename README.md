@@ -5,6 +5,7 @@
 ### Analyze. Compare. Decide.
 
 **Contract comparison and AI-assisted impact analysis for freelancers, developers, agencies, and deal-focused professionals.**
+Upload an original and a revised agreement, and DealLens detects what changed, classifies each change, and explains its potential impact. It then helps you prepare a client clarification email and export a report.
 
 <br />
 
@@ -21,11 +22,11 @@
 
 <br />
 
+[Explore](#-explore-deallens) ·
 [Overview](#project-overview) ·
 [Features](#core-features) ·
-[How it works](#how-dealLens-works) ·
+[How it works](#how-deallens-works) ·
 [Architecture](#architecture) ·
-[Live demo](#live-demo) ·
 [Setup](#local-installation-and-setup) ·
 [Limitations](#current-limitations)
 
@@ -33,20 +34,34 @@
 
 ---
 
+## 🚀 Explore DealLens
+
+| Service | Link |
+|---|---|
+| Live Frontend | https://deal-lens-ten.vercel.app |
+| Backend API | https://deallens-backend-9f9c.onrender.com |
+| AI Service | https://deallens-ai-service.onrender.com |
+| YouTube Demo | `[ADD_YOUTUBE_VIDEO_URL]` |
+
+> [!NOTE]
+> The backend and AI service are hosted on Render's free tier and may take some time to wake up after a period of inactivity. If the first request is slow or fails, wait a moment and try again.
+
 > [!IMPORTANT]
 > DealLens is built for software demonstration and development workflows. It is an assessment aid and **does not provide legal advice**. AI-generated output should be reviewed by a qualified person before anyone relies on it.
 
+---
+
 ## Table of contents
 
-1. [Project overview](#project-overview)
-2. [The problem](#the-problem)
-3. [Our solution](#our-solution)
-4. [Core features](#core-features)
-5. [How DealLens works](#how-dealLens-works)
-6. [Architecture](#architecture)
-7. [Technology stack](#technology-stack)
-8. [Sample documents](#sample-documents)
-9. [Live demo](#live-demo)
+1. [Explore DealLens](#-explore-deallens)
+2. [Project overview](#project-overview)
+3. [The problem](#the-problem)
+4. [Our solution](#our-solution)
+5. [Core features](#core-features)
+6. [How DealLens works](#how-deallens-works)
+7. [Architecture](#architecture)
+8. [Technology stack](#technology-stack)
+9. [Sample documents](#sample-documents)
 10. [Local installation and setup](#local-installation-and-setup)
 11. [Environment variables](#environment-variables)
 12. [AI provider and Groq rate limits](#ai-provider-and-groq-api-rate-limits)
@@ -258,20 +273,6 @@ Each folder is intended to hold an original PDF and its matching revised PDF. Fo
 - The email draft and report are based on the saved findings.
 
 The exact changes, counts, and wording depend on the sample files and on the AI model's response, so they can vary between runs.
-
----
-
-## Live demo
-
-> [!NOTE]
-> Deployment links have not been added yet. The placeholders below should be replaced once the services are deployed.
-
-| Resource | Link |
-|---|---|
-| **Live Frontend** | `[	https://deal-lens-ten.vercel.app]` |
-| **Backend API** | `[https://deallens-backend-9f9c.onrender.com]` |
-| **AI Service** | `[https://deallens-ai-service.onrender.com]` |
-| **YouTube Demo** | `[ADD YOUTUBE VIDEO URL]` |
 
 ---
 
@@ -553,7 +554,7 @@ The following measures are described in the project documentation. This list is 
 - **Authentication method.** Google OAuth is the only sign-in method. There is no local password flow.
 - **No email delivery.** Drafts can be generated, edited, saved, and copied, but DealLens does not send them.
 - **No frontend test suite.** Backend and AI-service tests exist. The frontend is validated through `npm run build`.
-- **Deployment not yet configured.** Deployment URLs are not specified.
+- **Free-tier hosting.** The live deployment runs the backend and AI service on Render's free tier, which can take time to wake up after inactivity. Further deployment configuration is listed in the [Roadmap](#roadmap).
 - **Not legal advice.** AI output is an assessment aid and not a legal interpretation.
 
 ---
