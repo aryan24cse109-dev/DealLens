@@ -1,3 +1,4 @@
+
 import { LogOut } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -8,11 +9,10 @@ export default function Navbar() {
     <header className="navbar">
       <div className="mobile-title">
         <img
-          src="/favicon.png"
-          alt=""
-          className="mobile-brand-icon"
+          src="/deallens-logo.png"
+          alt="DealLens"
+          className="mobile-brand-logo"
         />
-        <span>DealLens</span>
       </div>
 
       {logoutError && (
@@ -23,7 +23,9 @@ export default function Navbar() {
 
       <div className="user-menu">
         <div className="avatar">
-          {(user?.name || user?.email || 'U').slice(0, 1).toUpperCase()}
+          {(user?.name || user?.email || 'U')
+            .slice(0, 1)
+            .toUpperCase()}
         </div>
 
         <div className="user-copy">
