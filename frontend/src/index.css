@@ -56,3 +56,50 @@ html[data-theme='dark']{--ink:#f4f1fb;--muted:#aaa5b8;--surface:#292634;--canvas
     gap: 8px;
   }
 }
+
+
+/* DealLens horizontal logo */
+.side-brand {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.side-brand-logo {
+  display: block;
+  width: 155px;
+  max-width: 100%;
+  height: 42px;
+  object-fit: contain;
+  object-position: left center;
+}
+
+.mobile-brand-logo {
+  display: block;
+  width: 125px;
+  height: 34px;
+  object-fit: contain;
+  object-position: left center;
+}
+
+@media (max-width: 850px) {
+  .side-brand {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .side-brand-logo {
+    width: 38px;
+    height: 38px;
+    object-fit: cover;
+  }
+}
+
+@media (max-width: 620px) {
+  .mobile-title {
+    display: flex;
+    align-items: center;
+    margin-right: auto;
+  }
+}
