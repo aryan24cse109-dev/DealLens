@@ -36,15 +36,28 @@ Upload an original and a revised agreement, and DealLens detects what changed, c
 
 ## 🚀 Explore DealLens
 
-| Service | Link |
-|---|---|
-| Live Frontend | https://deal-lens-ten.vercel.app |
-| Backend API | https://deallens-backend-9f9c.onrender.com |
-| AI Service | https://deallens-ai-service.onrender.com |
-| YouTube Demo | [▶ Watch DealLens Demo](https://youtu.be/XoIwsZcT97A) |
 
-> [!NOTE]
-> The backend and AI service are hosted on Render's free tier and may take some time to wake up after a period of inactivity. If the first request is slow or fails, wait a moment and try again.
+| Service | Live URL | Health Check |
+|---|---|---|
+| **Frontend (Live Application)** | [Open DealLens](https://deal-lens-ten.vercel.app) | — |
+| **Backend API** | [Open Backend](https://deallens-backend-9f9c.onrender.com) | [Backend Health](https://deallens-backend-9f9c.onrender.com/api/v1/health) |
+| **AI Service** | [Open AI Service](https://deallens-ai-service.onrender.com) | [AI Health](https://deallens-ai-service.onrender.com/health) |
+| **YouTube Demo** | [▶ Watch DealLens Demo](https://youtu.be/XoIwsZcT97A) | — |
+
+> [!IMPORTANT]
+> **A note for visitors — Render Free Tier Hosting**
+>
+> The DealLens backend and AI service are currently hosted on Render's free tier. According to Render's free-instance policy, these services spin down after a period of inactivity and may take some time to become available again when accessed.
+>
+> **For the best experience, please follow this order before opening the frontend:**
+>
+> 1. Visit the [Backend Health Check](https://deallens-backend-9f9c.onrender.com/api/v1/health) and wait for the backend to respond successfully.
+> 2. Visit the [AI Service Health Check](https://deallens-ai-service.onrender.com/health) and wait for the AI service to respond.
+> 3. Once both services are awake, open the [DealLens Live Frontend](https://deal-lens-ten.vercel.app).
+>
+> **Please note:** The first request after inactivity may take longer than usual because the services need to wake up. If a service does not respond immediately, wait a little and retry. This is a hosting limitation of the current free-tier deployment, not necessarily an application error.
+
+
 
 > [!IMPORTANT]
 > DealLens is built for software demonstration and development workflows. It is an assessment aid and **does not provide legal advice**. AI-generated output should be reviewed by a qualified person before anyone relies on it.
