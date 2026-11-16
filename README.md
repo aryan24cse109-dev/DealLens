@@ -615,7 +615,7 @@ DealLens is built with open-source tools and services, including [React](https:/
 
 **Author:** [aryan24cse109-dev](https://github.com/aryan24cse109-dev)
 **Repository:** <https://github.com/aryan24cse109-dev/DealLens>
-**Contact and support:** `[ADD CONTACT DETAILS]`
+**Contact and support:** `[aryanagarwal8234@gmail.com]`
 
 ---
 
